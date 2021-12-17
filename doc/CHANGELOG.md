@@ -1,5 +1,7 @@
+### 1.9.8 (December 18, 2021)
+- JENKINS-67295 ignore empty line
 ### 1.9.7 (August 18, 2021)
-- JENKINS-66323 Forward compatibility with upcoming guava version, thanks to [Tim Jacomb](https://github.com/timja)
+- JENKINS-66323 forward compatibility with upcoming guava version, thanks to [Tim Jacomb](https://github.com/timja)
 ### 1.9.6 (March 8, 2021)
 - add more granular queue timing event for waiting, buildable, blocked events (e.g. type=dequeue_waiting OR type=dequeue_buildable OR type=dequeue_blocked ), thanks to [Reka Ajanthan](https://github.com/rekathiru)
 

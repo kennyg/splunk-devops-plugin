@@ -168,6 +168,10 @@ public class SplunkLogService {
             } else {
                 record = (EventRecord) message;
             }
+            Object content=record.getMessage();
+            if (content == null || "".equals(content) || "\n".equals(content)) {
+                continue;
+            }
             stringBuffer.append(LogEventHelper.toJson(record));
             stringBuffer.append("\n");
             if (stringBuffer.length() > batchSize) {

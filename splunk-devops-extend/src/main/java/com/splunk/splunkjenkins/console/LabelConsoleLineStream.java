@@ -45,10 +45,14 @@ public class LabelConsoleLineStream extends FilterOutputStream {
 
     protected void eol() {
         String line = decoder.decodeLine(branch.getBuffer(), branch.size());
+        if (line == null) {
+            // actually line can not be null, always ends with \n, add null check in case decode error
+            return;
+        }
         // reuse the buffer under normal circumstances
         branch.reset();
+        line = ANSI_COLOR_ESCAPE.matcher(line).replaceAll("");
         if (StringUtils.isNotBlank(line)) {
-            line = ANSI_COLOR_ESCAPE.matcher(line).replaceAll("");
             EventRecord record = new EventRecord(line, CONSOLE_LOG);
             record.setSource(source);
             ConsoleRecordCacheUtils.enqueue(record);
