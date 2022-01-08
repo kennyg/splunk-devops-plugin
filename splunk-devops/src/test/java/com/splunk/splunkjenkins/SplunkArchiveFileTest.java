@@ -1,8 +1,10 @@
 package com.splunk.splunkjenkins;
 
+import hudson.Functions;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Label;
+import hudson.tasks.BatchFile;
 import hudson.tasks.Shell;
 import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
@@ -25,7 +27,11 @@ public class SplunkArchiveFileTest extends BaseTest {
         FreeStyleProject project = j.createFreeStyleProject("verify_archive" + UUID.randomUUID());
         CaptureEnvironmentBuilder captureEnvironment = new CaptureEnvironmentBuilder();
         project.getBuildersList().add(captureEnvironment);
-        project.getBuildersList().add(new Shell("ps -ef >process_list.txt"));
+        if(Functions.isWindows()) {
+            project.getBuildersList().add(new BatchFile("echo foo > process_list.txt"));
+        } else {
+            project.getBuildersList().add(new Shell("echo foo > process_list.txt"));
+        }
         project.setAssignedLabel(label);
         SplunkJenkinsInstallation.get().setScriptContent(groovyScript);
         SplunkJenkinsInstallation.get().updateCache();

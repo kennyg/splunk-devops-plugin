@@ -1,11 +1,9 @@
 package com.splunk.splunkjenkins.console;
 
+import com.splunk.splunkjenkins.utils.LogEventHelper;
 import hudson.MarkupText;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.tools.ant.filters.StringInputStream;
-import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.SoftReference;
@@ -13,19 +11,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 public class LabelMarkupText extends MarkupText {
+    private static final Boolean isDisabled = Boolean.getBoolean(LogEventHelper.class.getName() + ".disableLabelMarkup");
     private static final String PARALLEL_BRANCH_LABEL = "Branch: ";
-    private static final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     private static final Logger LOG = Logger.getLogger(LabelMarkupText.class.getName());
     private static final String PARALLEL_LABEL = "parallel_label";
-
     //remembered enclosing label
     private String encloseLabel = null;
-    private SoftReference<Map<String, String>> encloseLabelRef = new SoftReference<>(new HashMap<String, String>());
+    private SoftReference<Map<String, String>> encloseLabelRef = new SoftReference<>(new HashMap<>());
     private String annotation = null;
 
     public LabelMarkupText() {
@@ -34,6 +32,9 @@ public class LabelMarkupText extends MarkupText {
 
     @Override
     public void addMarkup(int startPos, int endPos, String startTag, String endTag) {
+        if (isDisabled) {
+            return;
+        }
         parseTagLabel(startTag + endTag);
     }
 
@@ -48,13 +49,15 @@ public class LabelMarkupText extends MarkupText {
         }
         annotation = "";
         try {
-            Element node = factory.newDocumentBuilder().parse(new StringInputStream(tag)).getDocumentElement();
-            // hpyerlink
-            String href = node.getAttribute("href");
+            ConsoleNoteHandler handler = new ConsoleNoteHandler();
+            handler.read(tag);
+            String href = handler.getHref();
             if (isNotEmpty(href)) {
+                // anchor markup
                 annotation = "href=" + href;
+                return;
             }
-            String nodeId = node.getAttribute("nodeId");
+            String nodeId = handler.getNodeId();
             // NewNodeConsoleNote
             if (isNotEmpty(nodeId)) {
                 // encloseLabelRef lost in gc 
@@ -62,15 +65,15 @@ public class LabelMarkupText extends MarkupText {
                 if (encloseLabels == null) {
                     return;
                 }
-                if (node.getAttribute("startId").length() > 0) {
+                if (handler.getStartId() != null) {
                     // BlockEndNode or BlockStartNode
                     encloseLabel = null;
-                    String label = node.getAttribute("label");
+                    String label = handler.getLabel();
                     if (label.startsWith(PARALLEL_BRANCH_LABEL)) {
                         encloseLabels.put(nodeId, label.substring(PARALLEL_BRANCH_LABEL.length()));
                     }
                 } else {
-                    String enclosingId = node.getAttribute("enclosingId");
+                    String enclosingId = handler.getEnclosingId();
                     if (isNotEmpty(enclosingId)) {
                         //pipeline step  (not block level)
                         String nodeLabel = encloseLabels.get(enclosingId);
@@ -85,7 +88,7 @@ public class LabelMarkupText extends MarkupText {
                 }
             }
         } catch (Exception e) {
-            LOG.warning("failed to parse html console note " + e);
+            LOG.warning("failed to parse html console note " + tag + " exception:" + e);
         }
     }
 
