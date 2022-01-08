@@ -1,3 +1,5 @@
+### 1.9.9 (January 8, 2022)
+- JENKINS-67492 fix xml entity not declared error when parsing console node
 ### 1.9.8 (December 18, 2021)
 - JENKINS-67295 ignore empty line
 ### 1.9.7 (August 18, 2021)
